@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guess the Card</title>
+
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background: #ffffff; /* static white background */
+  color: black;
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.container {
+  width: 460px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: #6aaa64; /* green try again button */
+  color: white;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #6aaa64; /* always green */
+}
+
+.grid {
+  margin-top: 20px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1.4fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cell {
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 4px;
+  font-size: 14px;
+  color: white;
+}
+
+.correct { background: #6aaa64; }
+.partial { background: #c9b458; color: black; }
+.wrong-suit { background: #a11b1b; }
+
+.message {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h2>Guess the Card</h2>
+
+  <input id="guessInput" list="cardList" placeholder="Type a card name">
+  <datalist id="cardList"></datalist>
+
+  <button id="guessBtn">Guess</button>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="message" id="message"></div>
+  <button id="restartBtn" class="secondary" style="display:none;">Try Again</button>
+</div>
+
+<script>
+// ---------- SUIT COLORS ----------
+const suitColors = {
+  A: "#302f2c", B: "#f05907", C: "#48a140", D: "#42215e",
+  E: "#ba321a", F: "#292994", G: "#693123", H: "#7a1f8f",
+  I: "#e6c317", J: "#2a5759", K: "#737a7a", L: "#4ca4c2",
+  M: "#bac7cc", N: "#9b6cff"
+};
+
+// ---------- CARD LIST ----------
+const cards = [
+  { name: "Knights", suit: "A", strength: 20 },
+  { name: "Elven Archers", suit: "A", strength: 10 },
+  { name: "Light Cavalry", suit: "A", strength: 17 },
+  { name: "Dwarvish Infantry", suit: "A", strength: 15 },
+  { name: "Rangers", suit: "A", strength: 5 },
+
+  { name: "Shield of Keth", suit: "B", strength: 4 },
+  { name: "Gem of Order", suit: "B", strength: 5 },
+  { name: "Book of Changes", suit: "B", strength: 3 },
+  { name: "Protection Rune", suit: "B", strength: 1 },
+  { name: "World Tree", suit: "B", strength: 2 },
+
+  { name: "Unicorn", suit: "C", strength: 9 },
+  { name: "Basilisk", suit: "C", strength: 35 },
+  { name: "Warhorse", suit: "C", strength: 6 },
+  { name: "Dragon", suit: "C", strength: 30 },
+  { name: "Hydra", suit: "C", strength: 12 },
+  { name: "Phoenix", suit: "C", strength: 14 },
+
+  { name: "Dungeon", suit: "D", strength: 7 },
+  { name: "Castle", suit: "D", strength: 10 },
+  { name: "Crypt", suit: "D", strength: 21 },
+  { name: "Chapel", suit: "D", strength: 2 },
+  { name: "Bell Tower", suit: "D", strength: 8 },
+
+  { name: "Wildfire", suit: "E", strength: 40 },
+  { name: "Candle", suit: "E", strength: 2 },
+  { name: "Forge", suit: "E", strength: 9 },
+  { name: "Lightning", suit: "E", strength: 11 },
+  { name: "Fire Elemental", suit: "E", strength: 4 },
+
+  { name: "Swamp", suit: "F", strength: 18 },
+  { name: "Island", suit: "F", strength: 14 },
+  { name: "Water Elemental", suit: "F", strength: 4 },
+  { name: "Fountain of Life", suit: "F", strength: 1 },
+  { name: "Great Flood", suit: "F", strength: 32 },
+
+  { name: "Mountain", suit: "G", strength: 9 },
+  { name: "Cavern", suit: "G", strength: 6 },
+  { name: "Forest", suit: "G", strength: 7 },
+  { name: "Earth Elemental", suit: "G", strength: 4 },
+  { name: "Garden", suit: "G", strength: 11 },
+
+  { name: "King", suit: "H", strength: 8 },
+  { name: "Queen", suit: "H", strength: 6 },
+  { name: "Princess", suit: "H", strength: 2 },
+  { name: "Warlord", suit: "H", strength: 4 },
+  { name: "Empress", suit: "H", strength: 15 },
+
+  { name: "Judge", suit: "I", strength: 11 },
+  { name: "Angel", suit: "I", strength: 16 },
+  { name: "Leprechaun", suit: "I", strength: 20 },
+  { name: "Demon", suit: "I", strength: 45 },
+
+  { name: "Dark Queen", suit: "J", strength: 16 },
+  { name: "Ghoul", suit: "J", strength: 8 },
+  { name: "Spector", suit: "J", strength: 12 },
+  { name: "Lich", suit: "J", strength: 13 },
+  { name: "Death Knight", suit: "J", strength: 14 },
+
+  { name: "Warship", suit: "K", strength: 23 },
+  { name: "Magic Wand", suit: "K", strength: 1 },
+  { name: "Sword of Keth", suit: "K", strength: 7 },
+  { name: "Elven Longbow", suit: "K", strength: 3 },
+  { name: "War Dirigible", suit: "K", strength: 35 },
+
+  { name: "Rainstorm", suit: "L", strength: 8 },
+  { name: "Blizzard", suit: "L", strength: 30 },
+  { name: "Smoke", suit: "L", strength: 27 },
+  { name: "Whirlwind", suit: "L", strength: 13 },
+  { name: "Air Elemental", suit: "L", strength: 4 },
+
+  { name: "Doppelganger", suit: "M", strength: 0 },
+  { name: "Shapeshifter", suit: "M", strength: 0 },
+  { name: "Mirage", suit: "M", strength: 0 },
+
+  { name: "Collector", suit: "N", strength: 7 },
+  { name: "Beastmaster", suit: "N", strength: 9 },
+  { name: "Warlock Lord", suit: "N", strength: 25 },
+  { name: "Enchantress", suit: "N", strength: 5 },
+  { name: "Jester", suit: "N", strength: 3 },
+  { name: "Necromancer", suit: "N", strength: 3 }
+];
+
+
+// ---------- DOM ----------
+const input = document.getElementById("guessInput");
+const button = document.getElementById("guessBtn");
+const grid = document.getElementById("grid");
+const message = document.getElementById("message");
+const datalist = document.getElementById("cardList");
+const restartBtn = document.getElementById("restartBtn");
+
+// autocomplete
+cards.forEach(card => {
+  const option = document.createElement("option");
+  option.value = card.name;
+  datalist.appendChild(option);
+});
+
+let target, guesses;
+const MAX_GUESSES = 6;
+
+function startGame() {
+  target = cards[Math.floor(Math.random() * cards.length)];
+  guesses = 0;
+  grid.innerHTML = "";
+  message.textContent = "";
+  restartBtn.style.display = "none";
+  button.disabled = false;
+  document.body.style.background = "#ffffff"; // static white background
+}
+
+startGame();
+
+// ---------- GAME LOOP ----------
+button.onclick = () => {
+  const guess = cards.find(c => c.name.toLowerCase() === input.value.trim().toLowerCase());
+  if (!guess || guesses >= MAX_GUESSES) return;
+
+  guesses++;
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  // Card name + strength
+  const nameCell = document.createElement("div");
+  nameCell.className = "cell";
+  nameCell.textContent = `${guess.name} (${guess.strength})`;
+  nameCell.style.background = suitColors[guess.suit];
+
+  // Suit feedback
+  const suitCell = document.createElement("div");
+  if (guess.suit === target.suit) {
+    suitCell.className = "cell correct";
+    suitCell.textContent = "✔️";
+  } else {
+    suitCell.className = "cell wrong-suit";
+    suitCell.textContent = "✖️";
+  }
+
+  // Strength feedback
+  const strengthCell = document.createElement("div");
+  if (guess.strength === target.strength) {
+    strengthCell.className = "cell correct";
+    strengthCell.textContent = "✔️";
+  } else if (guess.strength < target.strength) {
+    strengthCell.className = "cell partial";
+    strengthCell.textContent = "⬆️ Higher";
+  } else {
+    strengthCell.className = "cell partial";
+    strengthCell.textContent = "⬇️ Lower";
+  }
+
+  row.append(nameCell, suitCell, strengthCell);
+  grid.appendChild(row);
+  input.value = "";
+
+  if (guess === target || guesses === MAX_GUESSES) {
+    message.textContent = guess === target
+      ? "🎉 You guessed the card!"
+      : `💀 It was ${target.name} (${target.strength})`;
+    button.disabled = true;
+    restartBtn.style.display = "block";
+  }
+};
+
+// restart button
+restartBtn.onclick = startGame;
+</script>
+</body>
+</html>
