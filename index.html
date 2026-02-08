@@ -15,7 +15,7 @@ body {
 }
 
 .container {
-  width: 640px;
+  width: 720px;
 }
 
 input {
@@ -35,13 +35,41 @@ button {
   cursor: pointer;
 }
 
+.options {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.type-toggle {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.legend {
+  margin-top: 6px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: bold;
+}
+
+.legend span {
+  display: none;
+  font-size: 13px;
+  margin-top: 4px;
+  color: #333;
+  font-weight: normal;
+}
+
+.legend.open span {
+  display: block;
+}
+
 .grid {
   margin-top: 20px;
 }
 
 .row {
   display: grid;
-  grid-template-columns: 2.5fr 1.2fr 1.6fr 1.6fr;
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -76,6 +104,21 @@ button {
 
   <button id="guessBtn">Guess</button>
 
+  <div class="options">
+    <label id="typeToggleWrapper" class="type-toggle">
+      <input type="checkbox" id="typeToggle" checked>
+      Type
+    </label>
+
+    <div id="legend" class="legend">
+      Type?
+      <span>
+        Bonus / Penalty / Neither<br>
+        A card may belong to more than one
+      </span>
+    </div>
+  </div>
+
   <div class="grid" id="grid"></div>
 
   <div class="message" id="message"></div>
@@ -85,114 +128,122 @@ button {
 <script>
 // ---------- SUIT COLORS ----------
 const suitColors = {
-  Army:"#302f2c",
-  Artifact:"#f05907",
-  Beast:"#48a140",
-  Building:"#42215e",
-  Flame:"#ba321a",
-  Flood:"#292994",
-  Land:"#693123",
-  Leader:"#7a1f8f",
-  Outsider:"#e6c317",
-  Undead:"#2a5759",
-  Weapon:"#737a7a",
-  Weather:"#4ca4c2",
-  Wild:"#bac7cc",
-  Wizard:"#9b6cff"
+  Army:"#302f2c", Artifact:"#f05907", Beast:"#48a140",
+  Building:"#42215e", Flame:"#ba321a", Flood:"#292994",
+  Land:"#693123", Leader:"#7a1f8f", Outsider:"#e6c317",
+  Undead:"#2a5759", Weapon:"#737a7a", Weather:"#4ca4c2",
+  Wild:"#bac7cc", Wizard:"#9b6cff"
 };
 
-// ---------- CARDS ----------
+// ---------- CARD LIST ----------
 const cards = [
-  {name:"Dwarvish Infantry", suit:"Army", strength:15, categories:["Penalty"]},
-  {name:"Rangers", suit:"Army", strength:5, categories:["Bonus"]},
-  {name:"Light Cavalry", suit:"Army", strength:17, categories:["Penalty"]},
-  {name:"Elven Archers", suit:"Army", strength:10, categories:["Bonus"]},
-  {name:"Knights", suit:"Army", strength:20, categories:["Penalty"]},
+  // Army
+  {name:"Dwarvish Infantry", suits:["Army"], strength:15, categories:["Penalty"]},
+  {name:"Rangers", suits:["Army"], strength:5, categories:["Bonus"]},
+  {name:"Light Cavalry", suits:["Army"], strength:17, categories:["Penalty"]},
+  {name:"Elven Archers", suits:["Army"], strength:10, categories:["Bonus"]},
+  {name:"Knights", suits:["Army"], strength:20, categories:["Penalty"]},
 
-  {name:"Shield of Keth", suit:"Artifact", strength:4, categories:["Bonus"]},
-  {name:"World Tree", suit:"Artifact", strength:2, categories:["Bonus"]},
-  {name:"Protection Rune", suit:"Artifact", strength:1, categories:["None"]},
-  {name:"Book of Changes", suit:"Artifact", strength:3, categories:["Bonus"]},
+  // Artifact
+  {name:"Shield of Keth", suits:["Artifact"], strength:4, categories:["Bonus"]},
+  {name:"World Tree", suits:["Artifact"], strength:2, categories:["Bonus"]},
+  {name:"Protection Rune", suits:["Artifact"], strength:1, categories:["None"]},
+  {name:"Book of Changes", suits:["Artifact"], strength:3, categories:["Bonus"]},
 
-  {name:"Phoenix", suit:"Beast", strength:14, categories:["Penalty","Bonus"]},
-  {name:"Hydra", suit:"Beast", strength:12, categories:["Bonus"]},
-  {name:"Warhorse", suit:"Beast", strength:6, categories:["Bonus"]},
-  {name:"Unicorn", suit:"Beast", strength:9, categories:["Bonus"]},
-  {name:"Basilisk", suit:"Beast", strength:35, categories:["Penalty"]},
-  {name:"Dragon", suit:"Beast", strength:30, categories:["None"]},
+  // Beast / Multi-suit Phoenix
+  {name:"Phoenix", suits:["Beast","Flame","Weather"], strength:14, categories:["Penalty","Bonus"]},
+  {name:"Hydra", suits:["Beast"], strength:12, categories:["Bonus"]},
+  {name:"Warhorse", suits:["Beast"], strength:6, categories:["Bonus"]},
+  {name:"Unicorn", suits:["Beast"], strength:9, categories:["Bonus"]},
+  {name:"Basilisk", suits:["Beast"], strength:35, categories:["Penalty"]},
+  {name:"Dragon", suits:["Beast"], strength:30, categories:["None"]},
 
-  {name:"Castle", suit:"Building", strength:10, categories:["Bonus"]},
-  {name:"Crypt", suit:"Building", strength:21, categories:["Penalty","Bonus"]},
-  {name:"Chapel", suit:"Building", strength:2, categories:["Bonus"]},
-  {name:"Dungeon", suit:"Building", strength:7, categories:["Bonus"]},
-  {name:"Bell Tower", suit:"Building", strength:8, categories:["Bonus"]},
+  // Building
+  {name:"Castle", suits:["Building"], strength:10, categories:["Bonus"]},
+  {name:"Crypt", suits:["Building"], strength:21, categories:["Penalty","Bonus"]},
+  {name:"Chapel", suits:["Building"], strength:2, categories:["Bonus"]},
+  {name:"Dungeon", suits:["Building"], strength:7, categories:["Bonus"]},
+  {name:"Bell Tower", suits:["Building"], strength:8, categories:["Bonus"]},
 
-  {name:"Wildfire", suit:"Flame", strength:40, categories:["Penalty"]},
-  {name:"Lightning", suit:"Flame", strength:11, categories:["Bonus"]},
-  {name:"Fire Elemental", suit:"Flame", strength:4, categories:["Bonus"]},
-  {name:"Forge", suit:"Flame", strength:9, categories:["Bonus"]},
-  {name:"Candle", suit:"Flame", strength:2, categories:["Bonus"]},
+  // Flame
+  {name:"Wildfire", suits:["Flame"], strength:40, categories:["Penalty"]},
+  {name:"Lightning", suits:["Flame"], strength:11, categories:["Bonus"]},
+  {name:"Fire Elemental", suits:["Flame"], strength:4, categories:["Bonus"]},
+  {name:"Forge", suits:["Flame"], strength:9, categories:["Bonus"]},
+  {name:"Candle", suits:["Flame"], strength:2, categories:["Bonus"]},
 
-  {name:"Swamp", suit:"Flood", strength:18, categories:["Penalty"]},
-  {name:"Island", suit:"Flood", strength:14, categories:["Bonus"]},
-  {name:"Water Elemental", suit:"Flood", strength:4, categories:["Bonus"]},
-  {name:"Fountain of Life", suit:"Flood", strength:1, categories:["Bonus"]},
-  {name:"Great Flood", suit:"Flood", strength:32, categories:["Penalty"]},
+  // Flood
+  {name:"Swamp", suits:["Flood"], strength:18, categories:["Penalty"]},
+  {name:"Island", suits:["Flood"], strength:14, categories:["Bonus"]},
+  {name:"Water Elemental", suits:["Flood"], strength:4, categories:["Bonus"]},
+  {name:"Fountain of Life", suits:["Flood"], strength:1, categories:["Bonus"]},
+  {name:"Great Flood", suits:["Flood"], strength:32, categories:["Penalty"]},
 
-  {name:"Mountain", suit:"Land", strength:9, categories:["Bonus"]},
-  {name:"Forest", suit:"Land", strength:7, categories:["Bonus"]},
-  {name:"Earth Elemental", suit:"Land", strength:4, categories:["Bonus"]},
-  {name:"Cavern", suit:"Land", strength:6, categories:["Bonus"]},
-  {name:"Garden", suit:"Land", strength:11, categories:["Penalty","Bonus"]},
+  // Land
+  {name:"Mountain", suits:["Land"], strength:9, categories:["Bonus"]},
+  {name:"Forest", suits:["Land"], strength:7, categories:["Bonus"]},
+  {name:"Earth Elemental", suits:["Land"], strength:4, categories:["Bonus"]},
+  {name:"Cavern", suits:["Land"], strength:6, categories:["Bonus"]},
+  {name:"Garden", suits:["Land"], strength:11, categories:["Penalty","Bonus"]},
 
-  {name:"Princess", suit:"Leader", strength:2, categories:["Bonus"]},
-  {name:"Warlord", suit:"Leader", strength:4, categories:["Bonus"]},
-  {name:"Queen", suit:"Leader", strength:6, categories:["Bonus"]},
-  {name:"King", suit:"Leader", strength:8, categories:["Bonus"]},
-  {name:"Empress", suit:"Leader", strength:15, categories:["Penalty","Bonus"]},
+  // Leader
+  {name:"Princess", suits:["Leader"], strength:2, categories:["Bonus"]},
+  {name:"Warlord", suits:["Leader"], strength:4, categories:["Bonus"]},
+  {name:"Queen", suits:["Leader"], strength:6, categories:["Bonus"]},
+  {name:"King", suits:["Leader"], strength:8, categories:["Bonus"]},
+  {name:"Empress", suits:["Leader"], strength:15, categories:["Penalty","Bonus"]},
 
-  {name:"Angel", suit:"Outsider", strength:16, categories:["Bonus"]},
-  {name:"Leprechaun", suit:"Outsider", strength:20, categories:["Bonus"]},
-  {name:"Judge", suit:"Outsider", strength:11, categories:["Bonus"]},
-  {name:"Demon", suit:"Outsider", strength:45, categories:["Penalty"]},
+  // Outsider
+  {name:"Angel", suits:["Outsider"], strength:16, categories:["Bonus"]},
+  {name:"Leprechaun", suits:["Outsider"], strength:20, categories:["Bonus"]},
+  {name:"Judge", suits:["Outsider"], strength:11, categories:["Bonus"]},
+  {name:"Demon", suits:["Outsider"], strength:45, categories:["Penalty"]},
 
-  {name:"Lich", suit:"Undead", strength:13, categories:["Bonus"]},
-  {name:"Dark Queen", suit:"Undead", strength:10, categories:["Bonus"]},
-  {name:"Specter", suit:"Undead", strength:12, categories:["Bonus"]},
-  {name:"Ghoul", suit:"Undead", strength:8, categories:["Bonus"]},
-  {name:"Death Knight", suit:"Undead", strength:14, categories:["Bonus"]},
+  // Undead
+  {name:"Lich", suits:["Undead"], strength:13, categories:["Bonus"]},
+  {name:"Dark Queen", suits:["Undead"], strength:10, categories:["Bonus"]},
+  {name:"Specter", suits:["Undead"], strength:12, categories:["Bonus"]},
+  {name:"Ghoul", suits:["Undead"], strength:8, categories:["Bonus"]},
+  {name:"Death Knight", suits:["Undead"], strength:14, categories:["Bonus"]},
 
-  {name:"Elven Longbow", suit:"Weapon", strength:3, categories:["Bonus"]},
-  {name:"War Dirigible", suit:"Weapon", strength:35, categories:["Penalty"]},
-  {name:"Warship", suit:"Weapon", strength:23, categories:["Penalty"]},
-  {name:"Magic Wand", suit:"Weapon", strength:1, categories:["Bonus"]},
-  {name:"Sword of Keth", suit:"Weapon", strength:7, categories:["Bonus"]},
+  // Weapon
+  {name:"Elven Longbow", suits:["Weapon"], strength:3, categories:["Bonus"]},
+  {name:"War Dirigible", suits:["Weapon"], strength:35, categories:["Penalty"]},
+  {name:"Warship", suits:["Weapon"], strength:23, categories:["Penalty"]},
+  {name:"Magic Wand", suits:["Weapon"], strength:1, categories:["Bonus"]},
+  {name:"Sword of Keth", suits:["Weapon"], strength:7, categories:["Bonus"]},
 
-  {name:"Whirlwind", suit:"Weather", strength:13, categories:["Bonus"]},
-  {name:"Blizzard", suit:"Weather", strength:30, categories:["Penalty"]},
-  {name:"Air Elemental", suit:"Weather", strength:4, categories:["Bonus"]},
-  {name:"Smoke", suit:"Weather", strength:27, categories:["Penalty"]},
-  {name:"Rainstorm", suit:"Weather", strength:8, categories:["Penalty","Bonus"]},
+  // Weather
+  {name:"Whirlwind", suits:["Weather"], strength:13, categories:["Bonus"]},
+  {name:"Blizzard", suits:["Weather"], strength:30, categories:["Penalty"]},
+  {name:"Air Elemental", suits:["Weather"], strength:4, categories:["Bonus"]},
+  {name:"Smoke", suits:["Weather"], strength:27, categories:["Penalty"]},
+  {name:"Rainstorm", suits:["Weather"], strength:8, categories:["Penalty","Bonus"]},
 
-  {name:"Mirage", suit:"Wild", strength:0, categories:["Bonus"]},
-  {name:"Shapeshifter", suit:"Wild", strength:0, categories:["Bonus"]},
-  {name:"Doppelganger", suit:"Wild", strength:0, categories:["None"]},
+  // Wild
+  {name:"Mirage", suits:["Wild"], strength:0, categories:["Bonus"]},
+  {name:"Shapeshifter", suits:["Wild"], strength:0, categories:["Bonus"]},
+  {name:"Doppelganger", suits:["Wild"], strength:0, categories:["None"]},
 
-  {name:"Jester", suit:"Wizard", strength:3, categories:["Bonus"]},
-  {name:"Enchantress", suit:"Wizard", strength:5, categories:["Bonus"]},
-  {name:"Collector", suit:"Wizard", strength:7, categories:["Bonus"]},
-  {name:"Beastmaster", suit:"Wizard", strength:9, categories:["Bonus"]},
-  {name:"Necromancer", suit:"Wizard", strength:3, categories:["Bonus"]},
-  {name:"Warlock Lord", suit:"Wizard", strength:25, categories:["Penalty"]}
+  // Wizard
+  {name:"Jester", suits:["Wizard"], strength:3, categories:["Bonus"]},
+  {name:"Enchantress", suits:["Wizard"], strength:5, categories:["Bonus"]},
+  {name:"Collector", suits:["Wizard"], strength:7, categories:["Bonus"]},
+  {name:"Beastmaster", suits:["Wizard"], strength:9, categories:["Bonus"]},
+  {name:"Necromancer", suits:["Wizard"], strength:3, categories:["Bonus"]},
+  {name:"Warlock Lord", suits:["Wizard"], strength:25, categories:["Penalty"]}
 ];
 
-// ---------- DOM ----------
+// ---------- SETUP ----------
 const input = document.getElementById("guessInput");
-const button = document.getElementById("guessBtn");
 const grid = document.getElementById("grid");
+const button = document.getElementById("guessBtn");
 const message = document.getElementById("message");
 const datalist = document.getElementById("cardList");
 const restartBtn = document.getElementById("restartBtn");
+const typeToggle = document.getElementById("typeToggle");
+const typeToggleWrapper = document.getElementById("typeToggleWrapper");
+const legend = document.getElementById("legend");
 
 cards.forEach(card => {
   const opt = document.createElement("option");
@@ -200,7 +251,9 @@ cards.forEach(card => {
   datalist.appendChild(opt);
 });
 
-let target, guesses;
+legend.onclick = () => legend.classList.toggle("open");
+
+let target, guesses = 0;
 const MAX_GUESSES = 6;
 
 function startGame() {
@@ -211,11 +264,12 @@ function startGame() {
   restartBtn.style.display = "none";
   button.disabled = false;
   input.value = "";
+  typeToggleWrapper.style.display = "block";
 }
 
 startGame();
 
-// ---------- GUESS HANDLER ----------
+// ---------- GUESS ----------
 function handleGuess() {
   const raw = input.value.trim().toLowerCase();
   if (!raw) return;
@@ -227,26 +281,35 @@ function handleGuess() {
   }
 
   guesses++;
+  typeToggleWrapper.style.display = "none";
+
+  const showType = typeToggle.checked;
 
   const row = document.createElement("div");
   row.className = "row";
+  row.style.gridTemplateColumns = showType
+    ? "2.6fr 1.3fr 1.6fr 1.6fr"
+    : "2.6fr 1.3fr 1.6fr";
 
   const nameCell = document.createElement("div");
   nameCell.className = "cell";
   nameCell.textContent = `${guess.name} (${guess.strength})`;
-  nameCell.style.background = suitColors[guess.suit];
+  nameCell.style.background = suitColors[guess.suits[0]];
 
-  const suitCorrect = guess.suit === target.suit;
   const suitCell = document.createElement("div");
-  suitCell.className = "cell " + (suitCorrect ? "correct" : "wrong");
-  suitCell.textContent = suitCorrect ? "Suit ✔️" : "Suit ✖️";
+  const suitMatch = guess.suits.some(s => target.suits.includes(s));
+  suitCell.className = "cell " + (suitMatch ? "correct" : "wrong");
+  suitCell.textContent = suitMatch ? "Suit ✔️" : "Suit ✖️";
 
-  const categoryMatch = guess.categories.some(c =>
-    target.categories.includes(c)
-  );
-  const categoryCell = document.createElement("div");
-  categoryCell.className = "cell " + (categoryMatch ? "correct" : "wrong");
-  categoryCell.textContent = categoryMatch ? "Category ✔️" : "Category ✖️";
+  row.append(nameCell, suitCell);
+
+  if (showType) {
+    const typeCell = document.createElement("div");
+    const typeMatch = guess.categories.some(c => target.categories.includes(c));
+    typeCell.className = "cell " + (typeMatch ? "correct" : "wrong");
+    typeCell.textContent = typeMatch ? "Type ✔️" : "Type ✖️";
+    row.append(typeCell);
+  }
 
   const strengthCell = document.createElement("div");
   if (guess.strength === target.strength) {
@@ -255,14 +318,13 @@ function handleGuess() {
   } else {
     strengthCell.className = "cell partial";
     strengthCell.textContent =
-      guess.strength < target.strength ? "⬆️ Higher" : "⬇️ Lower";
+      guess.strength < target.strength ? "⬆️ Strength" : "⬇️ Strength";
   }
 
-  row.append(nameCell, suitCell, categoryCell, strengthCell);
+  row.append(strengthCell);
   grid.appendChild(row);
 
   input.value = "";
-  message.textContent = "";
 
   if (guess === target || guesses === MAX_GUESSES) {
     message.textContent =
@@ -282,6 +344,7 @@ restartBtn.onclick = startGame;
 </script>
 </body>
 </html>
+
 
 
 
