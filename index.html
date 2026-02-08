@@ -106,7 +106,7 @@ button {
 
   <div class="options">
     <label id="typeToggleWrapper" class="type-toggle">
-      <input type="checkbox" id="typeToggle" checked>
+      <input type="checkbox" id="typeToggle">
       Type
     </label>
 
@@ -146,12 +146,12 @@ const cards = [
 
   // Artifact
   {name:"Shield of Keth", suits:["Artifact"], strength:4, categories:["Bonus"]},
+  {name:"Gem of Order", suits:["Artifact"], strength:5, categories:["Bonus"]},
   {name:"World Tree", suits:["Artifact"], strength:2, categories:["Bonus"]},
   {name:"Protection Rune", suits:["Artifact"], strength:1, categories:["None"]},
   {name:"Book of Changes", suits:["Artifact"], strength:3, categories:["Bonus"]},
-  {name:"Gem of Order", suits:["Artifact"], strength:5, categories:["Bonus"]},
-  
-  // Beast / Multi-suit Phoenix
+
+  // Beast / Multi-suit
   {name:"Phoenix", suits:["Beast","Flame","Weather"], strength:14, categories:["Penalty","Bonus"]},
   {name:"Hydra", suits:["Beast"], strength:12, categories:["Bonus"]},
   {name:"Warhorse", suits:["Beast"], strength:6, categories:["Bonus"]},
@@ -265,6 +265,7 @@ function startGame() {
   restartBtn.style.display = "none";
   button.disabled = false;
   input.value = "";
+  typeToggle.checked = false; // HARD MODE DEFAULT
   typeToggleWrapper.style.display = "block";
 }
 
@@ -345,6 +346,7 @@ restartBtn.onclick = startGame;
 </script>
 </body>
 </html>
+
 
 
 
