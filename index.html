@@ -119,7 +119,7 @@ button {
   <div class="grid" id="grid"></div>
 
   <div class="message" id="message"></div>
-  <button id="classicBtn" style="display:none;">Try Classic Mode</button>
+  <button id="classicBtn" style="display:none;"></button>
 </div>
 
 <script>
@@ -247,6 +247,8 @@ cards.forEach(c => {
   datalist.appendChild(o);
 });
 
+legend.onclick = () => legend.classList.toggle("open");
+
 let target, guesses = 0;
 const MAX_GUESSES = 6;
 let isClassic = false;
@@ -254,6 +256,7 @@ let isClassic = false;
 // ---------- START MODES ----------
 function startDaily() {
   isClassic = false;
+  reset();
   modeTitle.textContent = "Guess the Card — Daily";
   target = dailyTarget();
   typeToggle.checked = true;
@@ -263,12 +266,12 @@ function startDaily() {
 
 function startClassic() {
   isClassic = true;
+  reset();
   modeTitle.textContent = "Guess the Card — Classic";
   target = cards[Math.floor(Math.random() * cards.length)];
-  reset();
   typeToggle.checked = false;
   typeToggleWrapper.style.display = "inline";
-  legend.style.display = "none";
+  legend.style.display = "block";
   classicBtn.style.display = "none";
 }
 
@@ -277,6 +280,7 @@ function reset() {
   message.textContent = "";
   guesses = 0;
   guessBtn.disabled = false;
+  input.value = "";
 }
 
 // ---------- GUESS ----------
@@ -285,7 +289,7 @@ function guess() {
   if (!g) return;
 
   guesses++;
-  typeToggleWrapper.style.display = isClassic ? "inline" : "none";
+  if (isClassic) typeToggleWrapper.style.display = "none";
 
   const row = document.createElement("div");
   row.className = "row";
@@ -328,15 +332,27 @@ function guess() {
 
   if (g === target || guesses === MAX_GUESSES) {
     guessBtn.disabled = true;
-    localStorage.setItem(dailyKey, "true");
-    message.textContent = g === target ? "🎉 You solved today’s card!" : `💀 Today’s card was ${target.name}`;
+
+    if (!isClassic) {
+      localStorage.setItem(dailyKey, "true");
+      message.textContent = g === target
+        ? "🎉 You solved today’s card!"
+        : `💀 Today’s card was ${target.name}`;
+      classicBtn.textContent = "Try Classic Mode";
+    } else {
+      message.textContent = g === target
+        ? "🎉 You guessed the card!"
+        : `💀 The card was ${target.name}`;
+      classicBtn.textContent = "Try Again";
+    }
+
     classicBtn.style.display = "block";
   }
 }
 
 guessBtn.onclick = guess;
 input.addEventListener("keydown", e => e.key === "Enter" && guess());
-classicBtn.onclick = startClassic;
+classicBtn.onclick = () => isClassic ? startClassic() : startClassic();
 
 // ---------- INIT ----------
 if (localStorage.getItem(dailyKey)) {
@@ -347,11 +363,3 @@ if (localStorage.getItem(dailyKey)) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
