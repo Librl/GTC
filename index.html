@@ -222,11 +222,14 @@ const cards = [
   {name:"Warlock Lord", suits:["Wizard"], strength:25, categories:["Penalty"]}
 ];
 
-// ---------- DAILY TARGET ----------
+// ---------- DAILY TARGET FIX ----------
 function dailyTarget() {
+  // Seed based on date string
   let seed = 0;
-  for (let c of todayKey) seed = (seed << 5) - seed + c.charCodeAt(0);
-  return cards[Math.abs(seed) % cards.length];
+  for (let i = 0; i < todayKey.length; i++) {
+    seed = (seed * 31 + todayKey.charCodeAt(i)) % cards.length;
+  }
+  return cards[seed];
 }
 
 // ---------- DOM ----------
@@ -250,7 +253,6 @@ cards.forEach(c => {
 legend.onclick = () => legend.classList.toggle("open");
 
 let target, guesses = 0;
-const MAX_GUESSES = 6;
 let isClassic = false;
 
 // ---------- START MODES ----------
@@ -330,7 +332,7 @@ function guess() {
   grid.appendChild(row);
   input.value = "";
 
-  if (g === target || guesses === MAX_GUESSES) {
+  if (g === target || guesses === 6) {
     guessBtn.disabled = true;
 
     if (!isClassic) {
@@ -352,7 +354,7 @@ function guess() {
 
 guessBtn.onclick = guess;
 input.addEventListener("keydown", e => e.key === "Enter" && guess());
-classicBtn.onclick = () => isClassic ? startClassic() : startClassic();
+classicBtn.onclick = () => startClassic();
 
 // ---------- INIT ----------
 if (localStorage.getItem(dailyKey)) {
@@ -363,3 +365,4 @@ if (localStorage.getItem(dailyKey)) {
 </script>
 </body>
 </html>
+
