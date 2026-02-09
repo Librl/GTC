@@ -97,7 +97,7 @@ button {
 
 <body>
 <div class="container">
-  <h2>Guess the Card</h2>
+  <h2 id="modeTitle"></h2>
 
   <input id="guessInput" list="cardList" placeholder="Type a card name">
   <datalist id="cardList"></datalist>
@@ -112,21 +112,22 @@ button {
 
     <div id="legend" class="legend">
       Type?
-      <span>
-        Bonus / Penalty / Neither<br>
-        A card may belong to more than one
-      </span>
+      <span>Bonus / Penalty / Neither</span>
     </div>
   </div>
 
   <div class="grid" id="grid"></div>
 
   <div class="message" id="message"></div>
-  <button id="restartBtn" style="display:none;">Try Again</button>
+  <button id="classicBtn" style="display:none;">Try Classic Mode</button>
 </div>
 
 <script>
-// ---------- SUIT COLORS ----------
+// ---------- DATE ----------
+const todayKey = new Date().toISOString().slice(0,10);
+const dailyKey = "dailyCompleted-" + todayKey;
+
+// ---------- COLORS ----------
 const suitColors = {
   Army:"#302f2c", Artifact:"#f05907", Beast:"#48a140",
   Building:"#42215e", Flame:"#ba321a", Flood:"#292994",
@@ -137,21 +138,18 @@ const suitColors = {
 
 // ---------- CARD LIST ----------
 const cards = [
-  // Army
   {name:"Dwarvish Infantry", suits:["Army"], strength:15, categories:["Penalty"]},
   {name:"Rangers", suits:["Army"], strength:5, categories:["Bonus"]},
   {name:"Light Cavalry", suits:["Army"], strength:17, categories:["Penalty"]},
   {name:"Elven Archers", suits:["Army"], strength:10, categories:["Bonus"]},
   {name:"Knights", suits:["Army"], strength:20, categories:["Penalty"]},
 
-  // Artifact
   {name:"Shield of Keth", suits:["Artifact"], strength:4, categories:["Bonus"]},
   {name:"Gem of Order", suits:["Artifact"], strength:5, categories:["Bonus"]},
   {name:"World Tree", suits:["Artifact"], strength:2, categories:["Bonus"]},
   {name:"Protection Rune", suits:["Artifact"], strength:1, categories:["None"]},
   {name:"Book of Changes", suits:["Artifact"], strength:3, categories:["Bonus"]},
 
-  // Beast / Multi-suit
   {name:"Phoenix", suits:["Beast","Flame","Weather"], strength:14, categories:["Penalty","Bonus"]},
   {name:"Hydra", suits:["Beast"], strength:12, categories:["Bonus"]},
   {name:"Warhorse", suits:["Beast"], strength:6, categories:["Bonus"]},
@@ -159,74 +157,63 @@ const cards = [
   {name:"Basilisk", suits:["Beast"], strength:35, categories:["Penalty"]},
   {name:"Dragon", suits:["Beast"], strength:30, categories:["None"]},
 
-  // Building
   {name:"Castle", suits:["Building"], strength:10, categories:["Bonus"]},
   {name:"Crypt", suits:["Building"], strength:21, categories:["Penalty","Bonus"]},
   {name:"Chapel", suits:["Building"], strength:2, categories:["Bonus"]},
   {name:"Dungeon", suits:["Building"], strength:7, categories:["Bonus"]},
   {name:"Bell Tower", suits:["Building"], strength:8, categories:["Bonus"]},
 
-  // Flame
   {name:"Wildfire", suits:["Flame"], strength:40, categories:["Penalty"]},
   {name:"Lightning", suits:["Flame"], strength:11, categories:["Bonus"]},
   {name:"Fire Elemental", suits:["Flame"], strength:4, categories:["Bonus"]},
   {name:"Forge", suits:["Flame"], strength:9, categories:["Bonus"]},
   {name:"Candle", suits:["Flame"], strength:2, categories:["Bonus"]},
 
-  // Flood
   {name:"Swamp", suits:["Flood"], strength:18, categories:["Penalty"]},
   {name:"Island", suits:["Flood"], strength:14, categories:["Bonus"]},
   {name:"Water Elemental", suits:["Flood"], strength:4, categories:["Bonus"]},
   {name:"Fountain of Life", suits:["Flood"], strength:1, categories:["Bonus"]},
   {name:"Great Flood", suits:["Flood"], strength:32, categories:["Penalty"]},
 
-  // Land
   {name:"Mountain", suits:["Land"], strength:9, categories:["Bonus"]},
   {name:"Forest", suits:["Land"], strength:7, categories:["Bonus"]},
   {name:"Earth Elemental", suits:["Land"], strength:4, categories:["Bonus"]},
   {name:"Cavern", suits:["Land"], strength:6, categories:["Bonus"]},
   {name:"Garden", suits:["Land"], strength:11, categories:["Penalty","Bonus"]},
 
-  // Leader
   {name:"Princess", suits:["Leader"], strength:2, categories:["Bonus"]},
   {name:"Warlord", suits:["Leader"], strength:4, categories:["Bonus"]},
   {name:"Queen", suits:["Leader"], strength:6, categories:["Bonus"]},
   {name:"King", suits:["Leader"], strength:8, categories:["Bonus"]},
   {name:"Empress", suits:["Leader"], strength:15, categories:["Penalty","Bonus"]},
 
-  // Outsider
   {name:"Angel", suits:["Outsider"], strength:16, categories:["Bonus"]},
   {name:"Leprechaun", suits:["Outsider"], strength:20, categories:["Bonus"]},
   {name:"Judge", suits:["Outsider"], strength:11, categories:["Bonus"]},
   {name:"Demon", suits:["Outsider"], strength:45, categories:["Penalty"]},
 
-  // Undead
   {name:"Lich", suits:["Undead"], strength:13, categories:["Bonus"]},
   {name:"Dark Queen", suits:["Undead"], strength:10, categories:["Bonus"]},
   {name:"Specter", suits:["Undead"], strength:12, categories:["Bonus"]},
   {name:"Ghoul", suits:["Undead"], strength:8, categories:["Bonus"]},
   {name:"Death Knight", suits:["Undead"], strength:14, categories:["Bonus"]},
 
-  // Weapon
   {name:"Elven Longbow", suits:["Weapon"], strength:3, categories:["Bonus"]},
   {name:"War Dirigible", suits:["Weapon"], strength:35, categories:["Penalty"]},
   {name:"Warship", suits:["Weapon"], strength:23, categories:["Penalty"]},
   {name:"Magic Wand", suits:["Weapon"], strength:1, categories:["Bonus"]},
   {name:"Sword of Keth", suits:["Weapon"], strength:7, categories:["Bonus"]},
 
-  // Weather
   {name:"Whirlwind", suits:["Weather"], strength:13, categories:["Bonus"]},
   {name:"Blizzard", suits:["Weather"], strength:30, categories:["Penalty"]},
   {name:"Air Elemental", suits:["Weather"], strength:4, categories:["Bonus"]},
   {name:"Smoke", suits:["Weather"], strength:27, categories:["Penalty"]},
   {name:"Rainstorm", suits:["Weather"], strength:8, categories:["Penalty","Bonus"]},
 
-  // Wild
   {name:"Mirage", suits:["Wild"], strength:0, categories:["Bonus"]},
   {name:"Shapeshifter", suits:["Wild"], strength:0, categories:["Bonus"]},
   {name:"Doppelganger", suits:["Wild"], strength:0, categories:["None"]},
 
-  // Wizard
   {name:"Jester", suits:["Wizard"], strength:3, categories:["Bonus"]},
   {name:"Enchantress", suits:["Wizard"], strength:5, categories:["Bonus"]},
   {name:"Collector", suits:["Wizard"], strength:7, categories:["Bonus"]},
@@ -235,117 +222,132 @@ const cards = [
   {name:"Warlock Lord", suits:["Wizard"], strength:25, categories:["Penalty"]}
 ];
 
-// ---------- SETUP ----------
+// ---------- DAILY TARGET ----------
+function dailyTarget() {
+  let seed = 0;
+  for (let c of todayKey) seed = (seed << 5) - seed + c.charCodeAt(0);
+  return cards[Math.abs(seed) % cards.length];
+}
+
+// ---------- DOM ----------
 const input = document.getElementById("guessInput");
 const grid = document.getElementById("grid");
-const button = document.getElementById("guessBtn");
 const message = document.getElementById("message");
-const datalist = document.getElementById("cardList");
-const restartBtn = document.getElementById("restartBtn");
+const guessBtn = document.getElementById("guessBtn");
+const classicBtn = document.getElementById("classicBtn");
+const modeTitle = document.getElementById("modeTitle");
 const typeToggle = document.getElementById("typeToggle");
 const typeToggleWrapper = document.getElementById("typeToggleWrapper");
 const legend = document.getElementById("legend");
+const datalist = document.getElementById("cardList");
 
-cards.forEach(card => {
-  const opt = document.createElement("option");
-  opt.value = card.name;
-  datalist.appendChild(opt);
+cards.forEach(c => {
+  const o = document.createElement("option");
+  o.value = c.name;
+  datalist.appendChild(o);
 });
-
-legend.onclick = () => legend.classList.toggle("open");
 
 let target, guesses = 0;
 const MAX_GUESSES = 6;
+let isClassic = false;
 
-function startGame() {
-  target = cards[Math.floor(Math.random() * cards.length)];
-  guesses = 0;
-  grid.innerHTML = "";
-  message.textContent = "";
-  restartBtn.style.display = "none";
-  button.disabled = false;
-  input.value = "";
-  typeToggle.checked = false; // HARD MODE DEFAULT
-  typeToggleWrapper.style.display = "block";
+// ---------- START MODES ----------
+function startDaily() {
+  isClassic = false;
+  modeTitle.textContent = "Guess the Card — Daily";
+  target = dailyTarget();
+  typeToggle.checked = true;
+  typeToggleWrapper.style.display = "none";
+  legend.style.display = "block";
 }
 
-startGame();
+function startClassic() {
+  isClassic = true;
+  modeTitle.textContent = "Guess the Card — Classic";
+  target = cards[Math.floor(Math.random() * cards.length)];
+  reset();
+  typeToggle.checked = false;
+  typeToggleWrapper.style.display = "inline";
+  legend.style.display = "none";
+  classicBtn.style.display = "none";
+}
+
+function reset() {
+  grid.innerHTML = "";
+  message.textContent = "";
+  guesses = 0;
+  guessBtn.disabled = false;
+}
 
 // ---------- GUESS ----------
-function handleGuess() {
-  const raw = input.value.trim().toLowerCase();
-  if (!raw) return;
-
-  const guess = cards.find(c => c.name.toLowerCase() === raw);
-  if (!guess) {
-    message.textContent = "❌ Card not found.";
-    return;
-  }
+function guess() {
+  const g = cards.find(c => c.name.toLowerCase() === input.value.toLowerCase());
+  if (!g) return;
 
   guesses++;
-  typeToggleWrapper.style.display = "none";
-
-  const showType = typeToggle.checked;
+  typeToggleWrapper.style.display = isClassic ? "inline" : "none";
 
   const row = document.createElement("div");
   row.className = "row";
-  row.style.gridTemplateColumns = showType
+  row.style.gridTemplateColumns = typeToggle.checked
     ? "2.6fr 1.3fr 1.6fr 1.6fr"
     : "2.6fr 1.3fr 1.6fr";
 
-  const nameCell = document.createElement("div");
-  nameCell.className = "cell";
-  nameCell.textContent = `${guess.name} (${guess.strength})`;
-  nameCell.style.background = suitColors[guess.suits[0]];
+  const name = document.createElement("div");
+  name.className = "cell";
+  name.textContent = `${g.name} (${g.strength})`;
+  name.style.background = suitColors[g.suits[0]];
 
-  const suitCell = document.createElement("div");
-  const suitMatch = guess.suits.some(s => target.suits.includes(s));
-  suitCell.className = "cell " + (suitMatch ? "correct" : "wrong");
-  suitCell.textContent = suitMatch ? "Suit ✔️" : "Suit ✖️";
+  const suit = document.createElement("div");
+  const suitMatch = g.suits.some(s => target.suits.includes(s));
+  suit.className = "cell " + (suitMatch ? "correct" : "wrong");
+  suit.textContent = suitMatch ? "Suit ✔️" : "Suit ✖️";
 
-  row.append(nameCell, suitCell);
+  row.append(name, suit);
 
-  if (showType) {
-    const typeCell = document.createElement("div");
-    const typeMatch = guess.categories.some(c => target.categories.includes(c));
-    typeCell.className = "cell " + (typeMatch ? "correct" : "wrong");
-    typeCell.textContent = typeMatch ? "Type ✔️" : "Type ✖️";
-    row.append(typeCell);
+  if (typeToggle.checked) {
+    const type = document.createElement("div");
+    const match = g.categories.some(c => target.categories.includes(c));
+    type.className = "cell " + (match ? "correct" : "wrong");
+    type.textContent = match ? "Type ✔️" : "Type ✖️";
+    row.append(type);
   }
 
-  const strengthCell = document.createElement("div");
-  if (guess.strength === target.strength) {
-    strengthCell.className = "cell correct";
-    strengthCell.textContent = "✔️";
+  const str = document.createElement("div");
+  if (g.strength === target.strength) {
+    str.className = "cell correct";
+    str.textContent = "✔️";
   } else {
-    strengthCell.className = "cell partial";
-    strengthCell.textContent =
-      guess.strength < target.strength ? "⬆️ Strength" : "⬇️ Strength";
+    str.className = "cell partial";
+    str.textContent = g.strength < target.strength ? "⬆️ Strength" : "⬇️ Strength";
   }
 
-  row.append(strengthCell);
+  row.append(str);
   grid.appendChild(row);
-
   input.value = "";
 
-  if (guess === target || guesses === MAX_GUESSES) {
-    message.textContent =
-      guess === target
-        ? "🎉 You guessed the card!"
-        : `💀 It was ${target.name} (${target.strength})`;
-    button.disabled = true;
-    restartBtn.style.display = "block";
+  if (g === target || guesses === MAX_GUESSES) {
+    guessBtn.disabled = true;
+    localStorage.setItem(dailyKey, "true");
+    message.textContent = g === target ? "🎉 You solved today’s card!" : `💀 Today’s card was ${target.name}`;
+    classicBtn.style.display = "block";
   }
 }
 
-button.onclick = handleGuess;
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") handleGuess();
-});
-restartBtn.onclick = startGame;
+guessBtn.onclick = guess;
+input.addEventListener("keydown", e => e.key === "Enter" && guess());
+classicBtn.onclick = startClassic;
+
+// ---------- INIT ----------
+if (localStorage.getItem(dailyKey)) {
+  startClassic();
+} else {
+  startDaily();
+}
 </script>
 </body>
 </html>
+
 
 
 
