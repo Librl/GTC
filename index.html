@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -123,7 +123,7 @@ button {
 </div>
 
 <script>
-// ---------- DATE ----------
+// ---------- DATE & DAILY KEY ----------
 const todayKey = new Date().toISOString().slice(0,10);
 const dailyKey = "dailyCompleted-" + todayKey;
 
@@ -222,9 +222,8 @@ const cards = [
   {name:"Warlock Lord", suits:["Wizard"], strength:25, categories:["Penalty"]}
 ];
 
-// ---------- DAILY TARGET FIX ----------
+// ---------- DAILY TARGET ----------
 function dailyTarget() {
-  // Seed based on date string
   let seed = 0;
   for (let i = 0; i < todayKey.length; i++) {
     seed = (seed * 31 + todayKey.charCodeAt(i)) % cards.length;
@@ -277,6 +276,7 @@ function startClassic() {
   classicBtn.style.display = "none";
 }
 
+// ---------- RESET ----------
 function reset() {
   grid.innerHTML = "";
   message.textContent = "";
@@ -336,7 +336,7 @@ function guess() {
     guessBtn.disabled = true;
 
     if (!isClassic) {
-      localStorage.setItem(dailyKey, "true");
+      localStorage.setItem(dailyKey, "true"); // Mark daily as played
       message.textContent = g === target
         ? "🎉 You solved today’s card!"
         : `💀 Today’s card was ${target.name}`;
@@ -356,8 +356,9 @@ guessBtn.onclick = guess;
 input.addEventListener("keydown", e => e.key === "Enter" && guess());
 classicBtn.onclick = () => startClassic();
 
-// ---------- INIT ----------
+// ---------- INIT DAILY / CLASSIC ----------
 if (localStorage.getItem(dailyKey)) {
+  // Already played today → skip to classic
   startClassic();
 } else {
   startDaily();
@@ -365,4 +366,3 @@ if (localStorage.getItem(dailyKey)) {
 </script>
 </body>
 </html>
-
